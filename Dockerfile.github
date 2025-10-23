@@ -1,0 +1,36 @@
+FROM rust:1.88.0-bullseye AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get -y upgrade && apt-get install -y cmake libclang-dev
+
+# Copy source code
+COPY . lighthouse
+
+# Set build arguments
+ARG FEATURES
+ARG PROFILE=release
+ARG CARGO_USE_GIT_CLI=true
+
+# Set environment variables
+ENV FEATURES=$FEATURES
+ENV PROFILE=$PROFILE
+ENV CARGO_NET_GIT_FETCH_WITH_CLI=$CARGO_USE_GIT_CLI
+
+# Build lighthouse
+RUN cd lighthouse && cargo build --bin lighthouse --profile $PROFILE --features "$FEATURES"
+
+# Runtime stage
+FROM ubuntu:22.04
+
+# Install runtime dependencies
+RUN apt-get update && apt-get -y upgrade && apt-get install -y --no-install-recommends \
+  libssl-dev \
+  ca-certificates \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+# Copy the binary from builder stage
+COPY --from=builder /lighthouse/target/release/lighthouse /usr/local/bin/lighthouse
+
+# Set the entrypoint
+ENTRYPOINT ["lighthouse"]

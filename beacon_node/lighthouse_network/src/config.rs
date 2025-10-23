@@ -512,6 +512,7 @@ pub fn gossipsub_config(
         .message_id_fn(gossip_message_id)
         .allow_self_origin(true)
         .idontwant_message_size_threshold(idontwant_message_size_threshold)
+        .idontwant_on_publish(true) // Enable IDONTWANT messages on first publish
         .build()
         .expect("valid gossipsub configuration")
 }
